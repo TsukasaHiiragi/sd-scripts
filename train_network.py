@@ -133,6 +133,12 @@ class NetworkTrainer:
             vae.set_use_memory_efficient_attention_xformers(args.xformers)
 
         return model_util.get_model_version_str_for_sd1_sd2(args.v2, args.v_parameterization), text_encoder, vae, unet
+    
+    def move_to_cpu(self, text_encoders, vae, unet):
+        for t_enc in text_encoders:
+            t_enc.to("cpu")
+        vae.to("cpu")
+        unet.to("cpu")
 
     def get_tokenize_strategy(self, args):
         return strategy_sd.SdTokenizeStrategy(args.v2, args.max_token_length, args.tokenizer_cache_dir)
@@ -414,6 +420,8 @@ class NetworkTrainer:
 
         # text_encoder is List[CLIPTextModel] or CLIPTextModel
         text_encoders = text_encoder if isinstance(text_encoder, list) else [text_encoder]
+
+        self.move_to_cpu(text_encoders, vae, unet)
 
         # 差分追加学習のためにモデルを読み込む
         sys.path.append(os.path.dirname(__file__))
